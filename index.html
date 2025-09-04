@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多功能账号信息追踪器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+        }
+        input, select {
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+            width: 100%;
+            box-sizing: border-box;
+            background-color: white;
+        }
+        th {
+            background-color: #f9fafb;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #4b5563;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        td {
+            padding: 0.5rem;
+            white-space: nowrap;
+        }
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-primary { background-color: #3b82f6; color: white; }
+        .btn-primary:hover { background-color: #2563eb; }
+        .btn-secondary { background-color: #10b981; color: white; }
+        .btn-secondary:hover { background-color: #059669; }
+        .btn-danger { background-color: #ef4444; color: white; width: 2rem; height: 2rem; padding: 0.5rem; border-radius: 50%; }
+        .btn-danger:hover { background-color: #dc2626; }
+        .profit-positive { color: #16a34a; font-weight: 600; }
+        .profit-negative { color: #dc2626; font-weight: 600; }
+        .status-inactive { color: #6b7280; }
+        .status-active { color: #16a34a; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 p-4 sm:p-6 lg:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-6">
+            <h1 class="text-3xl font-bold text-gray-900">账号信息追踪器</h1>
+            <p class="text-gray-600 mt-1">集中管理您的所有平台账号信息。</p>
+        </header>
+
+        <!-- 控制与搜索区 -->
+        <div class="flex flex-col md:flex-row items-center justify-between mb-4 gap-4">
+            <div class="relative w-full md:w-1/3">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                    <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                    </svg>
+                </span>
+                <input type="text" id="search-input" placeholder="按任意关键字搜索..." class="pl-10 p-2 w-full border rounded-md">
+            </div>
+            <div class="flex gap-4">
+                <button id="add-row-btn" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                    添加账号
+                </button>
+                <button id="download-btn" class="btn btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg>
+                    导出数据
+                </button>
+            </div>
+        </div>
+
+        <!-- 主表 -->
+        <div class="overflow-x-auto bg-white rounded-lg shadow">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th>平台</th>
+                        <th>账号</th>
+                        <th>登录密码</th>
+                        <th>注册日期</th>
+                        <th>位置</th>
+                        <th>IP地址</th>
+                        <th>IP到期日</th>
+                        <th>资金密码</th>
+                        <th>综合盈利</th>
+                        <th>是否停用</th>
+                        <th>备注</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="account-table-body" class="bg-white divide-y divide-gray-200">
+                    <!-- JS动态生成行 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tableBody = document.getElementById('account-table-body');
+            const addRowBtn = document.getElementById('add-row-btn');
+            const downloadBtn = document.getElementById('download-btn');
+            const searchInput = document.getElementById('search-input');
+
+            let allData = JSON.parse(localStorage.getItem('accountTrackerData')) || [
+                { id: Date.now(), platform: '示例平台', account: 'user123', password: '', regDate: '2023-01-15', location: '新加坡', ip: '192.168.1.10', ipExpiry: '2024-12-31', fundPassword: '', profit: 1500, isDisabled: '否', notes: '初始账号' }
+            ];
+            let filteredData = [...allData];
+
+            const renderTable = () => {
+                tableBody.innerHTML = '';
+                filteredData.forEach((data, index) => {
+                    const row = document.createElement('tr');
+                    const originalIndex = allData.findIndex(item => item.id === data.id);
+                    row.className = `hover:bg-gray-50 ${data.isDisabled === '是' ? 'opacity-60' : ''}`;
+                    row.innerHTML = `
+                        <td><input type="text" data-key="platform" value="${data.platform || ''}"></td>
+                        <td><input type="text" data-key="account" value="${data.account || ''}"></td>
+                        <td><input type="password" data-key="password" placeholder="输入以更新" autocomplete="new-password"></td>
+                        <td><input type="date" data-key="regDate" value="${data.regDate || ''}"></td>
+                        <td><input type="text" data-key="location" value="${data.location || ''}"></td>
+                        <td><input type="text" data-key="ip" value="${data.ip || ''}"></td>
+                        <td><input type="date" data-key="ipExpiry" value="${data.ipExpiry || ''}"></td>
+                        <td><input type="password" data-key="fundPassword" placeholder="输入以更新" autocomplete="new-password"></td>
+                        <td><input type="number" data-key="profit" value="${data.profit || 0}" class="${(data.profit || 0) >= 0 ? 'profit-positive' : 'profit-negative'} text-right"></td>
+                        <td>
+                            <select data-key="isDisabled" class="${data.isDisabled === '是' ? 'status-inactive' : 'status-active'} font-bold">
+                                <option value="否" ${data.isDisabled === '否' ? 'selected' : ''}>否</option>
+                                <option value="是" ${data.isDisabled === '是' ? 'selected' : ''}>是</option>
+                            </select>
+                        </td>
+                        <td><input type="text" data-key="notes" value="${data.notes || ''}"></td>
+                        <td class="text-center">
+                            <button class="btn-danger delete-btn" data-id="${data.id}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            };
+
+            const saveData = () => {
+                const dataToSave = allData.map(item => {
+                    const { password, fundPassword, ...rest } = item;
+                    return rest; // Exclude passwords from saving
+                });
+                localStorage.setItem('accountTrackerData', JSON.stringify(dataToSave));
+            };
+
+            const handleSearch = () => {
+                const searchTerm = searchInput.value.toLowerCase();
+                if (!searchTerm) {
+                    filteredData = [...allData];
+                } else {
+                    filteredData = allData.filter(item => 
+                        Object.values(item).some(val => 
+                            String(val).toLowerCase().includes(searchTerm)
+                        )
+                    );
+                }
+                renderTable();
+            };
+
+            addRowBtn.addEventListener('click', () => {
+                const newAccount = { id: Date.now(), platform: '', account: '', password: '', regDate: '', location: '', ip: '', ipExpiry: '', fundPassword: '', profit: 0, isDisabled: '否', notes: '' };
+                allData.unshift(newAccount);
+                handleSearch();
+            });
+
+            tableBody.addEventListener('change', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+                    const id = parseInt(e.target.closest('tr').querySelector('.delete-btn').dataset.id);
+                    const key = e.target.dataset.key;
+                    const value = e.target.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value;
+                    
+                    const itemIndex = allData.findIndex(item => item.id === id);
+                    if (itemIndex > -1) {
+                        // Do not save empty password fields, but allow updating them
+                        if ((key === 'password' || key === 'fundPassword') && value === '') {
+                           // If user clears the password field, we don't update the stored value
+                           // but if they type something, we update it.
+                           // The value in memory will be updated for the session.
+                           allData[itemIndex][key] = value;
+                        } else {
+                           allData[itemIndex][key] = value;
+                           saveData();
+                        }
+                    }
+                    // Re-render to reflect changes like color updates
+                    handleSearch();
+                }
+            });
+
+            tableBody.addEventListener('click', (e) => {
+                const deleteBtn = e.target.closest('.delete-btn');
+                if (deleteBtn) {
+                    const id = parseInt(deleteBtn.dataset.id);
+                    allData = allData.filter(item => item.id !== id);
+                    saveData();
+                    handleSearch();
+                }
+            });
+
+            searchInput.addEventListener('input', handleSearch);
+
+            downloadBtn.addEventListener('click', () => {
+                const dataToExport = filteredData.length > 0 ? filteredData : allData;
+                const headers = ["平台", "账号", "注册日期", "位置", "IP地址", "IP到期日", "综合盈利", "是否停用", "备注"];
+                const data = dataToExport.map(item => [
+                    item.platform, item.account, item.regDate, item.location,
+                    item.ip, item.ipExpiry, item.profit, item.isDisabled, item.notes
+                ]);
+
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+                XLSX.utils.book_append_sheet(wb, ws, "账号信息报表");
+                XLSX.writeFile(wb, `账号信息报表_${new Date().toISOString().slice(0,10)}.xlsx`);
+            });
+
+            // Initial Load
+            handleSearch();
+        });
+    </script>
+</body>
+</html>
